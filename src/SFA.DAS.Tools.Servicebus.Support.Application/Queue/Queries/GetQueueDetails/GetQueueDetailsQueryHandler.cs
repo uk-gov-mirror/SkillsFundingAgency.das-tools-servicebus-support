@@ -1,25 +1,18 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
+
+public class GetQueueDetailsQueryHandler(IAsbService asbService)
+    : IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse>
 {
-    public class GetQueueDetailsQueryHandler : IQueryHandler<GetQueueDetailsQuery, GetQueueDetailsQueryResponse>
+    public async Task<GetQueueDetailsQueryResponse> Handle(GetQueueDetailsQuery query)
     {
-        private readonly IAsbService _asbService;
+        var queueInfo = await asbService.GetQueueDetailsAsync(query.QueueName);
 
-        public GetQueueDetailsQueryHandler(IAsbService asbService)
+        return new GetQueueDetailsQueryResponse()
         {
-            _asbService = asbService;
-        }
-
-        public async Task<GetQueueDetailsQueryResponse> Handle(GetQueueDetailsQuery query)
-        {
-            var queueInfo = await _asbService.GetQueueDetailsAsync(query.QueueName);
-
-            return new GetQueueDetailsQueryResponse()
-            {
-                QueueInfo = queueInfo
-            };
-        }
+            QueueInfo = queueInfo
+        };
     }
 }

@@ -8,40 +8,39 @@ using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.ServiceBus
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.ServiceBus;
+
+public class WhenBatchingMessageRetrievalWithOddNumber
 {
-    public class WhenBatchingMessageRetrievalWithOddNumber
+    private readonly string _queueName = "q";
+    private readonly int expected = 22;
+    private readonly int batchSize = 10;
+    private readonly int totalOnQueue = 22;
+    private int _totalRetrieved = 0;
+
+    [Test]
+    public async Task ThenMessagesAreRetrievedInCorrectBatchSizes()
     {
-        private readonly string _queueName = "q";
-        private readonly int expected = 22;
-        private readonly int batchSize = 10;
-        private readonly int totalOnQueue = 22;
-        private int _totalRetrieved = 0;
+        var strategy = new BatchGetMessageStrategy();
+        var counter = 0;
 
-        [Test]
-        public async Task ThenMessagesAreRetrievedInCorrectBatchSizes()
+        var messages = await strategy.Execute<Message, Message>(_queueName, expected, batchSize, async (x) =>
         {
-            var strategy = new BatchGetMessageStrategy();
-            var counter = 0;
+            counter++;
+            var retVal = new List<Message>();
+            var i = 0;
 
-            var messages = await strategy.Execute<Message, Message>(_queueName, expected, batchSize, async (x) =>
+            while (i++ < x && _totalRetrieved < totalOnQueue)
             {
-                counter++;
-                var retVal = new List<Message>();
-                var i = 0;
+                retVal.Add(new Message());
+                _totalRetrieved++;
+            }
 
-                while (i++ < x && _totalRetrieved < totalOnQueue)
-                {
-                    retVal.Add(new Message());
-                    _totalRetrieved++;
-                }
+            return retVal;
 
-                return retVal;
+        }, async (msg) => msg);
 
-            }, async (msg) => msg);
-
-            messages.Count.Should().Be(expected);
-            counter.Should().Be(3);
-        }
+        messages.Count.Should().Be(expected);
+        counter.Should().Be(3);
     }
 }

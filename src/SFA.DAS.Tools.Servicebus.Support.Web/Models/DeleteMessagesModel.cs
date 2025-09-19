@@ -1,7 +1,6 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Web.Models
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Web.Models;
+
+public class DeleteMessagesModel
 {
-    public class DeleteMessagesModel
-    {
-        public string Ids { get; set; }
-    }
+    public string Ids { get; set; }
 }

@@ -1,22 +1,15 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.SendMessages;
+
+public class SendMessagesCommandHandler(IAsbService asbService)
+    : ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>
 {
-    public class SendMessagesCommandHandler : ICommandHandler<SendMessagesCommand, SendMessagesCommandResponse>
+    public async Task<SendMessagesCommandResponse> Handle(SendMessagesCommand query)
     {
-        private readonly IAsbService _asbService;
+        await asbService.SendMessagesAsync(query.Messages, query.QueueName);
 
-        public SendMessagesCommandHandler(IAsbService asbService)
-        {
-            _asbService = asbService;
-        }
-
-        public async Task<SendMessagesCommandResponse> Handle(SendMessagesCommand query)
-        {
-            await _asbService.SendMessagesAsync(query.Messages, query.QueueName);
-
-            return new SendMessagesCommandResponse();
-        }
+        return new SendMessagesCommandResponse();
     }
 }

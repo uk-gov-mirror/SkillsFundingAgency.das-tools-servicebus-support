@@ -1,22 +1,15 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
+
+public class DeleteUserSessionCommandHandler(ICosmosUserSessionDbContext cosmosDbContext)
+    : ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>
 {
-    public class DeleteUserSessionCommandHandler : ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse>
+    public async Task<DeleteUserSessionCommandResponse> Handle(DeleteUserSessionCommand query)
     {
-        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
+        await cosmosDbContext.DeleteUserSessionAsync(query.Id, query.UserId);
 
-        public DeleteUserSessionCommandHandler(ICosmosUserSessionDbContext cosmosDbContext)
-        {
-            _cosmosDbContext = cosmosDbContext;
-        }
-
-        public async Task<DeleteUserSessionCommandResponse> Handle(DeleteUserSessionCommand query)
-        {
-            await _cosmosDbContext.DeleteUserSessionAsync(query.Id, query.UserId);
-
-            return new DeleteUserSessionCommandResponse();
-        }
+        return new DeleteUserSessionCommandResponse();
     }
 }

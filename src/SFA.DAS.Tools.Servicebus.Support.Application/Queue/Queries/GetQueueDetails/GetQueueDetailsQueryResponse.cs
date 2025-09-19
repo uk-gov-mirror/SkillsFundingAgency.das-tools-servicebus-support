@@ -1,10 +1,9 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
+
+public class GetQueueDetailsQueryResponse
 {
-    public class GetQueueDetailsQueryResponse
-    {
-        public QueueInfo QueueInfo { get; set; }
-    }
+    public QueueInfo QueueInfo { get; set; }
 }

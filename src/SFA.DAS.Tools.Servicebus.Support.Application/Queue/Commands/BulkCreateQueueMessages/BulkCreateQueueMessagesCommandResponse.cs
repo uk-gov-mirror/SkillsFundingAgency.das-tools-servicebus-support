@@ -1,6 +1,5 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+
+public class BulkCreateQueueMessagesCommandResponse
 {
-    public class BulkCreateQueueMessagesCommandResponse
-    {
-    }
 }

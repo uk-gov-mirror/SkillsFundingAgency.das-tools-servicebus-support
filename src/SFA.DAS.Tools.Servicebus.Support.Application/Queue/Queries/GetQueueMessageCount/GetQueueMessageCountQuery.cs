@@ -1,7 +1,6 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
+
+public class GetQueueMessageCountQuery
 {
-    public class GetQueueMessageCountQuery
-    {
-        public string QueueName { get; set; }
-    }
+    public string QueueName { get; set; }
 }

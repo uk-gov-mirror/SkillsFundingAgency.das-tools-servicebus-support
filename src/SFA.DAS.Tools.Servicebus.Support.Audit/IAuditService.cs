@@ -1,10 +1,9 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Audit
+namespace SFA.DAS.Tools.Servicebus.Support.Audit;
+
+public interface IAuditService
 {
-    public interface IAuditService
-    {
-        Task WriteAudit(AuditMessage message);
-    }
+    Task WriteAudit(AuditMessage message);
 }

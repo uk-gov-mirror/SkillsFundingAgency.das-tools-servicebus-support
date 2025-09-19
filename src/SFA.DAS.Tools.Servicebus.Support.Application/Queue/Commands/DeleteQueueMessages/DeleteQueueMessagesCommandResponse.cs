@@ -1,6 +1,5 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteQueueMessages;
+
+public class DeleteQueueMessagesCommandResponse
 {
-    public class DeleteQueueMessagesCommandResponse
-    {
-    }
 }

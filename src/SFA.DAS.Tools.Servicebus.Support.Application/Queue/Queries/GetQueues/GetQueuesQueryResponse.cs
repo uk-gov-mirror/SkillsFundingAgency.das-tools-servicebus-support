@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueues;
+
+public class GetQueuesQueryResponse
 {
-    public class GetQueuesQueryResponse
-    {
-        public IEnumerable<QueueInfo> Queues { get; set; }
-    }
+    public IEnumerable<QueueInfo> Queues { get; set; }
 }

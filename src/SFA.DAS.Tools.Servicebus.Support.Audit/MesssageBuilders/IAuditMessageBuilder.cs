@@ -1,9 +1,8 @@
 ﻿using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders
+namespace SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+
+public interface IAuditMessageBuilder
 {
-    public interface IAuditMessageBuilder
-    {
-        void Build(AuditMessage message);
-    }
+    void Build(AuditMessage message);
 }

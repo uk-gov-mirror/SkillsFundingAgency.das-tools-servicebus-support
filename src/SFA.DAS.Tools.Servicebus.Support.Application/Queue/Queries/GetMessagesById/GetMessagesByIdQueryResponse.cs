@@ -1,12 +1,11 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
+
+public class GetMessagesByIdQueryResponse
 {
-    public class GetMessagesByIdQueryResponse
-    {
-        public IEnumerable<QueueMessage> Messages { get; set; }
-    }
+    public IEnumerable<QueueMessage> Messages { get; set; }
 }

@@ -1,157 +1,156 @@
 using System;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 using System.IO;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SFA.DAS.Configuration.AzureTableStorage;
+using SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Web
+namespace SFA.DAS.Tools.Servicebus.Support.Web;
+
+public class Startup
 {
-    public class Startup
+    private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _configuration;
+
+    public Startup(IConfiguration configuration, IWebHostEnvironment env)
     {
-        private readonly IWebHostEnvironment _env;
-        private readonly IConfiguration _configuration;
+        _env = env;
 
-        public Startup(IConfiguration configuration, IWebHostEnvironment env)
-        {
-            _env = env;
-
-            var builder = new ConfigurationBuilder()
-                .AddConfiguration(configuration)
-                .SetBasePath(Directory.GetCurrentDirectory())
+        var builder = new ConfigurationBuilder()
+            .AddConfiguration(configuration)
+            .SetBasePath(Directory.GetCurrentDirectory())
 #if DEBUG
-                .AddJsonFile("appsettings.json", true)
-                .AddJsonFile("appsettings.Development.json", true)
+            .AddJsonFile("appsettings.json", true)
+            .AddJsonFile("appsettings.Development.json", true)
 #endif                
-                .AddEnvironmentVariables();
+            .AddEnvironmentVariables();
 
-            if (!configuration["EnvironmentName"].Equals("DEV", StringComparison.CurrentCultureIgnoreCase))
-            {
-                builder.AddAzureTableStorage(options =>
-                {
-                    options.ConfigurationKeys = configuration["ConfigNames"].Split(",");
-                    options.StorageConnectionString = configuration["ConfigurationStorageConnectionString"];
-                    options.EnvironmentName = configuration["EnvironmentName"];
-                    options.PreFixConfigurationKeys = false;
-                });
-            }
-
-            _configuration = builder.Build();
-        }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        if (!configuration["EnvironmentName"].Equals("DEV", StringComparison.CurrentCultureIgnoreCase))
         {
-            services.AddOptions();
-            services.AddConfiguration(_configuration);
-            services.AddCommands();
-            services.AddQueries();
-            services.AddServices();
-            services.AddAntiforgery(options =>
+            builder.AddAzureTableStorage(options =>
             {
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            });
-            services.AddAuthentication(_configuration);
-            services.AddHealthChecks();
-            services.AddRouting(options => options.LowercaseUrls = true);
-
-            services.AddControllersWithViews(options =>
-            {
-                var policy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .RequireRole(_configuration["UserIdentitySettings:RequiredRole"])
-                    .Build();
-                options.Filters.Add(new AuthorizeFilter(policy));
-                options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-            });
-            services.AddHttpContextAccessor();
-            services.AddRazorPages(options =>
-            {
-                options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
-            });
-
-            services.AddOpenTelemetryRegistration(_configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]!);
-            services.AddDistributedCache(_configuration, _env);
-
-            services.AddSession(options =>
-            {
-                options.IdleTimeout = TimeSpan.FromMinutes(10);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.Cookie.IsEssential = true;
+                options.ConfigurationKeys = configuration["ConfigNames"].Split(",");
+                options.StorageConnectionString = configuration["ConfigurationStorageConnectionString"];
+                options.EnvironmentName = configuration["EnvironmentName"];
+                options.PreFixConfigurationKeys = false;
             });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        _configuration = builder.Build();
+    }
+
+    // This method gets called by the runtime. Use this method to add services to the container.
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddOptions();
+        services.AddConfiguration(_configuration);
+        services.AddCommands();
+        services.AddQueries();
+        services.AddServices();
+        services.AddAntiforgery(options =>
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Servicebus/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        });
+        services.AddAuthentication(_configuration);
+        services.AddHealthChecks();
+        services.AddRouting(options => options.LowercaseUrls = true);
 
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedProto
-            });
+        services.AddControllersWithViews(options =>
+        {
+            var policy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .RequireRole(_configuration["UserIdentitySettings:RequiredRole"])
+                .Build();
+            options.Filters.Add(new AuthorizeFilter(policy));
+            options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        });
+        services.AddHttpContextAccessor();
+        services.AddRazorPages(options =>
+        {
+            options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
+        });
 
-            app.Use(async (context, next) =>
-            {
-                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-                context.Response.Headers.Add("X-Xss-Protection", "1");
-                await next();
-            });
+        services.AddOpenTelemetryRegistration(_configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]!);
+        services.AddDistributedCache(_configuration, _env);
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
+        services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromMinutes(10);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.IsEssential = true;
+        });
+    }
 
-            app.Use(async (context, next) =>
-            {
-                if (context.Response.Headers.ContainsKey("X-Frame-Options"))
-                {
-                    context.Response.Headers.Remove("X-Frame-Options");
-                }
-
-                context.Response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
-
-                await next();
-
-                if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
-                {
-                    //Re-execute the request so the user gets the error page
-                    var originalPath = context.Request.Path.Value;
-                    context.Items["originalPath"] = originalPath;
-                    context.Request.Path = "/error/404";
-                    await next();
-                }
-            });
-
-            app.UseRouting();
-
-            app.UseAuthentication();
-            app.UseHealthChecks("/health");
-            app.UseSession();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Servicebus}/{action=Index}/{id?}");
-            });
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
         }
+        else
+        {
+            app.UseExceptionHandler("/Servicebus/Error");
+            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+            app.UseHsts();
+        }
+
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedProto
+        });
+
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+            context.Response.Headers.Add("X-Xss-Protection", "1");
+            await next();
+        });
+
+        app.UseHttpsRedirection();
+        app.UseStaticFiles();
+
+        app.Use(async (context, next) =>
+        {
+            if (context.Response.Headers.ContainsKey("X-Frame-Options"))
+            {
+                context.Response.Headers.Remove("X-Frame-Options");
+            }
+
+            context.Response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
+
+            await next();
+
+            if (context.Response.StatusCode == 404 && !context.Response.HasStarted)
+            {
+                //Re-execute the request so the user gets the error page
+                var originalPath = context.Request.Path.Value;
+                context.Items["originalPath"] = originalPath;
+                context.Request.Path = "/error/404";
+                await next();
+            }
+        });
+
+        app.UseRouting();
+
+        app.UseAuthentication();
+        app.UseHealthChecks("/health");
+        app.UseSession();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Servicebus}/{action=Index}/{id?}");
+        });
     }
 }

@@ -1,33 +1,26 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Http;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
-using System.Linq;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
+
+public class UserService(IHttpContextAccessor httpContextAccessor, UserIdentitySettings userIdentitySettings)
+    : IUserService
 {
-    public class UserService : IUserService
+    private readonly string _nameClame = userIdentitySettings.NameClaim;
+
+    public string GetUserId()
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly string _nameClame;
+        return httpContextAccessor.HttpContext?.User.Claims.Where(x => x.Type.Contains("nameidentifier")).Select(x => x.Value).FirstOrDefault();
+    }
 
-        public UserService(IHttpContextAccessor httpContextAccessor, UserIdentitySettings userIdentitySettings)
-        {
-            _httpContextAccessor = httpContextAccessor;
-            _nameClame = userIdentitySettings.NameClaim; ;
-        }
+    public string GetName()
+    {
+        return httpContextAccessor.HttpContext?.User.Claims.Where(x => x.Type == _nameClame).Select(x => x.Value).FirstOrDefault();
+    }
 
-        public string GetUserId()
-        {
-            return _httpContextAccessor.HttpContext?.User.Claims.Where(x => x.Type.Contains("nameidentifier")).Select(x => x.Value).FirstOrDefault();
-        }
-
-        public string GetName()
-        {
-            return _httpContextAccessor.HttpContext?.User.Claims.Where(x => x.Type == _nameClame).Select(x => x.Value).FirstOrDefault();
-        }
-
-        public void Configure(string userId, string userName)
-        {
-            throw new System.NotImplementedException();
-        }
+    public void Configure(string userId, string userName)
+    {
+        throw new System.NotImplementedException();
     }
 }

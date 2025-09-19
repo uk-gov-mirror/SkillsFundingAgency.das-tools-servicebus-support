@@ -1,25 +1,18 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetExpiredUserSessions;
+
+public class GetExpiredUserSessionsQueryHandler(ICosmosUserSessionDbContext cosmosDbContext)
+    : IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>
 {
-    public class GetExpiredUserSessionsQueryHandler : IQueryHandler<GetExpiredUserSessionsQuery, GetExpiredUserSessionsQueryResponse>
+    public async Task<GetExpiredUserSessionsQueryResponse> Handle(GetExpiredUserSessionsQuery query)
     {
-        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
+        var expiredUserSessions = await cosmosDbContext.GetExpiredUserSessionsAsync();
 
-        public GetExpiredUserSessionsQueryHandler(ICosmosUserSessionDbContext cosmosDbContext)
+        return new GetExpiredUserSessionsQueryResponse
         {
-            _cosmosDbContext = cosmosDbContext;
-        }
-
-        public async Task<GetExpiredUserSessionsQueryResponse> Handle(GetExpiredUserSessionsQuery query)
-        {
-            var expiredUserSessions = await _cosmosDbContext.GetExpiredUserSessionsAsync();
-
-            return new GetExpiredUserSessionsQueryResponse
-            {
-                ExpiredUserSessions = expiredUserSessions
-            };
-        }
+            ExpiredUserSessions = expiredUserSessions
+        };
     }
 }

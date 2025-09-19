@@ -1,26 +1,18 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessagesById;
+
+public class GetMessagesByIdQueryHandler(ICosmosMessageDbContext cosmosDbContext)
+    : IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>
 {
-    public class GetMessagesByIdQueryHandler : IQueryHandler<GetMessagesByIdQuery, GetMessagesByIdQueryResponse>
+    public async Task<GetMessagesByIdQueryResponse> Handle(GetMessagesByIdQuery query)
     {
-        private readonly ICosmosMessageDbContext _cosmosDbContext;
+        var messages = await cosmosDbContext.GetQueueMessagesByIdAsync(query.UserId, query.Ids);
 
-        public GetMessagesByIdQueryHandler(ICosmosMessageDbContext cosmosDbContext)
+        return new GetMessagesByIdQueryResponse()
         {
-            _cosmosDbContext = cosmosDbContext;
-        }
-
-
-        public async Task<GetMessagesByIdQueryResponse> Handle(GetMessagesByIdQuery query)
-        {
-            var messages = await _cosmosDbContext.GetQueueMessagesByIdAsync(query.UserId, query.Ids);
-
-            return new GetMessagesByIdQueryResponse()
-            {
-                Messages = messages
-            };
-        }
+            Messages = messages
+        };
     }
 }

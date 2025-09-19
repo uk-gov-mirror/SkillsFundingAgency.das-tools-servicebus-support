@@ -1,10 +1,9 @@
 ﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
+
+public class ReceiveQueueMessagesQuery
 {
-    public class ReceiveQueueMessagesQuery
-    {
-        public string QueueName { get; set; }
-        public int Quantity { get; set; }
-    }
+    public string QueueName { get; set; }
+    public int Quantity { get; set; }
 }

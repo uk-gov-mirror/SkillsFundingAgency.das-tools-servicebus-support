@@ -1,48 +1,48 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using SFA.DAS.Tools.Servicebus.Support.Application.Services;
+using SFA.DAS.Tools.Servicebus.Support.Audit;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MesssageBuilders;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
-using SFA.DAS.Tools.Servicebus.Support.Audit;
-using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
-using SFA.DAS.Tools.Servicebus.Support.Audit.MesssageBuilders;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start
+namespace SFA.DAS.Tools.Servicebus.Support.Web.App_Start;
+
+public static class IoC
 {
-    public static class IoC
+    public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        public static IServiceCollection AddServices(this IServiceCollection services)
+        services.AddSingleton(s =>
         {
-            services.AddSingleton(s =>
-            {
-                var cosmosDbSettings = s.GetRequiredService<CosmosDbSettings>();
-                return new CosmosClient(cosmosDbSettings.Url, cosmosDbSettings.AuthKey, new CosmosClientOptions() { AllowBulkExecution = true });
-            });
+            var cosmosDbSettings = s.GetRequiredService<CosmosDbSettings>();
+            return new CosmosClient(cosmosDbSettings.Url, cosmosDbSettings.AuthKey, new CosmosClientOptions() { AllowBulkExecution = true });
+        });
 
-            services.AddScoped<IAsbService, AsbService>();
-            services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
-            services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>();
-            services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>();
-            services.AddTransient<IUserService, UserService>();
-            services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
-            services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
-            services.AddTransient<IMessageService, MessageService>();
-            services.AddTransient<IMessageReceiverFactory, MessageReceiverFactory>();
-            services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>();
-            services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>();
-            services.AddTransient<IUserSessionService, UserSessionService>();
-            services.AddTransient<KeepUserSessionActiveFilter>();
-            services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
-            services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
-            services.AddTransient<IAuditApiClient, AuditApiClient>();
-            services.AddTransient<IAuditMessageBuilder, BaseAuditMessageBuilder>();
-            services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
-            services.AddTransient<IAuditService, AuditService>();
+        services.AddScoped<IAsbService, AsbService>();
+        services.AddTransient<ICosmosInfrastructureService, CosmosInfrastructureService>();
+        services.AddTransient<ICosmosMessageDbContext, CosmosMessageDbContext>();
+        services.AddTransient<ICosmosUserSessionDbContext, CosmosUserSessionDbContext>();
+        services.AddTransient<IUserService, UserService>();
+        services.AddTransient<IBatchGetMessageStrategy, BatchGetMessageStrategy>();
+        services.AddTransient<IBatchSendMessageStrategy, BatchSendMessageStrategy>();
+        services.AddTransient<IMessageService, MessageService>();
+        services.AddTransient<IBulkReplayService, BulkReplayService>();
+        services.AddTransient<IMessageReceiverFactory, MessageReceiverFactory>();
+        services.AddTransient<IRetrieveMessagesService, RetrieveMessagesService>();
+        services.AddSingleton<IMessageDetailRedactor, MessageDetailRedactor>();
+        services.AddTransient<IUserSessionService, UserSessionService>();
+        services.AddTransient<KeepUserSessionActiveFilter>();
+        services.AddSingleton<ICosmosDbPolicies, CosmosDbPolicies>();
+        services.AddSingleton<IServiceBusPolicies, ServiceBusPolicies>();
+        services.AddTransient<IAuditApiClient, AuditApiClient>();
+        services.AddTransient<IAuditMessageBuilder, BaseAuditMessageBuilder>();
+        services.AddTransient<IAuditMessageBuilder, ChangedByMessageBuilder>();
+        services.AddTransient<IAuditService, AuditService>();
 
-            return services;
-        }
+        return services;
     }
 }

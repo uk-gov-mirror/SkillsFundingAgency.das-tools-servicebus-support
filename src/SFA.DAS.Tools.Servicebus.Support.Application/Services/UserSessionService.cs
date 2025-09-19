@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.DeleteUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.UpsertUserSession;
@@ -7,95 +9,78 @@ using SFA.DAS.Tools.Servicebus.Support.Domain;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
-using System;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Services;
+
+public class UserSessionService(
+    ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse> upsertUserSessionCommand,
+    IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
+    ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
+    IUserService userService,
+    UserIdentitySettings config,
+    IHttpContextAccessor httpContextAccessor)
+    : IUserSessionService
 {
-    public class UserSessionService : IUserSessionService
+    private readonly int _userSessionExpiryHours = config.UserSessionExpiryHours <= 0 ? 24 : config.UserSessionExpiryHours;
+
+    public async Task<UserSession> UpsertUserSession(string queue)
     {
-        private readonly ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse> _upsertUserSessionCommand;
-        private readonly IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> _getUserSessionQuery;
-        private readonly ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> _deleteUserSessionCommand;
-        private readonly IUserService _userService;
-        private readonly int _userSessionExpiryHours;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        var userSession = await GetUserSession();
 
-        public UserSessionService(ICommandHandler<UpsertUserSessionCommand, UpsertUserSessionCommandResponse> upsertUserSessionCommand,
-            IQueryHandler<GetUserSessionQuery, GetUserSessionQueryResponse> getUserSessionQuery,
-            ICommandHandler<DeleteUserSessionCommand, DeleteUserSessionCommandResponse> deleteUserSessionCommand,
-            IUserService userService,
-            UserIdentitySettings config,
-            IHttpContextAccessor httpContextAccessor
-            )
+        if (userSession != null)
         {
-            _upsertUserSessionCommand = upsertUserSessionCommand;
-            _getUserSessionQuery = getUserSessionQuery;
-            _deleteUserSessionCommand = deleteUserSessionCommand;
-            _userService = userService;
-            _userSessionExpiryHours = config.UserSessionExpiryHours <= 0 ? 24 : config.UserSessionExpiryHours;
-            _httpContextAccessor = httpContextAccessor;
+            // Update Expiry
+            userSession.ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours);
+        }
+        else
+        {
+            // Create new session
+            userSession = CreateUserSession(queue);
         }
 
-        public async Task<UserSession> UpsertUserSession(string queue)
+        var result = await upsertUserSessionCommand.Handle(new UpsertUserSessionCommand()
         {
-            var userSession = await GetUserSession();
+            UserSession = userSession
+        });
 
-            if (userSession != null)
-            {
-                // Update Expiry
-                userSession.ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours);
-            }
-            else
-            {
-                // Create new session
-                userSession = CreateUserSession(queue);
-            }
-
-            var result = await _upsertUserSessionCommand.Handle(new UpsertUserSessionCommand()
-            {
-                UserSession = userSession
-            });
-
-            return result.UserSession;
-        }
-
-        public async Task DeleteUserSession()
-        {
-            var currentSession = _httpContextAccessor.HttpContext.Session.Get<UserSession>("userSession");
-            var userSession = currentSession ?? await GetUserSession();
-
-            if (userSession != null)
-            {
-                await _deleteUserSessionCommand.Handle(new DeleteUserSessionCommand()
-                {
-                    Id = userSession.Id,
-                    UserId = _userService.GetUserId()
-                });
-            }
-        }
-
-        public async Task<UserSession> GetUserSession()
-        {
-            var result = await _getUserSessionQuery.Handle(new GetUserSessionQuery()
-            {
-                UserId = _userService.GetUserId()
-            });
-
-            return result.UserSession;
-        }
-
-        private UserSession CreateUserSession(string queueName)
-        {
-            return new UserSession
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserId = _userService.GetUserId(),
-                UserName = _userService.GetName(),
-                ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours),
-                Queue = queueName
-            };
-        }
-
+        return result.UserSession;
     }
+
+    public async Task DeleteUserSession()
+    {
+        var currentSession = httpContextAccessor.HttpContext.Session.Get<UserSession>("userSession");
+        var userSession = currentSession ?? await GetUserSession();
+
+        if (userSession != null)
+        {
+            await deleteUserSessionCommand.Handle(new DeleteUserSessionCommand()
+            {
+                Id = userSession.Id,
+                UserId = userService.GetUserId()
+            });
+        }
+    }
+
+    public async Task<UserSession> GetUserSession()
+    {
+        var result = await getUserSessionQuery.Handle(new GetUserSessionQuery()
+        {
+            UserId = userService.GetUserId()
+        });
+
+        return result.UserSession;
+    }
+
+    private UserSession CreateUserSession(string queueName)
+    {
+        return new UserSession
+        {
+            Id = Guid.NewGuid().ToString(),
+            UserId = userService.GetUserId(),
+            UserName = userService.GetName(),
+            ExpiryDateUtc = DateTime.UtcNow.AddHours(_userSessionExpiryHours),
+            Queue = queueName
+        };
+    }
+
 }

@@ -1,9 +1,8 @@
 ﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
+
+public class GetUserSessionQuery
 {
-    public class GetUserSessionQuery
-    {
-        public string UserId { get; set; }
-    }
+    public string UserId { get; set; }
 }

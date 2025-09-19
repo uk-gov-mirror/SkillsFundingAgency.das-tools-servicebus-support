@@ -1,73 +1,72 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BatchDeleteQueueMessages;
-using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Audit;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.DeleteQueueMessage
+namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Commands.DeleteQueueMessage;
+
+public class WhenBatchDeleteQueueMessage
 {
-    public class WhenBatchDeleteQueueMessage
+    private Mock<ICosmosMessageDbContext> _cosmosDbContext;
+    private readonly Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>> _logger = new Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>>();
+    private IList<string> _messageIds;
+    private readonly ServiceBusErrorManagementSettings _serviceBusSettings = new ServiceBusErrorManagementSettings
     {
-        private Mock<ICosmosMessageDbContext> _cosmosDbContext;
-        private readonly Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>> _logger = new Mock<ILogger<BatchDeleteQueueMessagesCommandHandler>>();
-        private IList<string> _messageIds;
-        private readonly ServiceBusErrorManagementSettings _serviceBusSettings = new ServiceBusErrorManagementSettings
+        PeekMessageBatchSize = 20
+    };
+    private readonly Mock<IAuditService> _auditService = new Mock<IAuditService>(MockBehavior.Strict);
+
+    [Test]
+    public async Task ThenWillCallServiceToDeleteMessage()
+    {
+        _messageIds = new List<string>();
+        var i = 0;
+        while (i++ < 30)
         {
-            PeekMessageBatchSize = 20
-        };
-        private readonly Mock<IAuditService> _auditService = new Mock<IAuditService>(MockBehavior.Strict);
-
-        [Test]
-        public async Task ThenWillCallServiceToDeleteMessage()
-        {
-            _messageIds = new List<string>();
-            var i = 0;
-            while (i++ < 30)
-            {
-                _messageIds.Add($"id{i}");
-            }
-
-            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
-
-            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object, _auditService.Object);
-
-            await sut.Handle(new BatchDeleteQueueMessagesCommand()
-            {
-                Ids = _messageIds
-            });
-
-            _cosmosDbContext.Verify(x => x.DeleteQueueMessagesAsync(_messageIds), Times.Exactly(2));
+            _messageIds.Add($"id{i}");
         }
 
-        [Test]
-        public async Task ThenWillCallAuditServiceToRecordMessageIds()
+        _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
+
+        var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object, _auditService.Object);
+
+        await sut.Handle(new BatchDeleteQueueMessagesCommand()
         {
-            _messageIds = new List<string>();
-            var i = 0;
-            while (i++ < 10)
-            {
-                _messageIds.Add($"id{i}");
-            }
+            Ids = _messageIds
+        });
 
-            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
-            _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()));
+        _cosmosDbContext.Verify(x => x.DeleteQueueMessagesAsync(_messageIds), Times.Exactly(2));
+    }
 
-            var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object, _auditService.Object);
-
-            await sut.Handle(new BatchDeleteQueueMessagesCommand()
-            {
-                Ids = _messageIds
-            });
-
-            _auditService.Verify(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()), Times.Once);
+    [Test]
+    public async Task ThenWillCallAuditServiceToRecordMessageIds()
+    {
+        _messageIds = new List<string>();
+        var i = 0;
+        while (i++ < 10)
+        {
+            _messageIds.Add($"id{i}");
         }
+
+        _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.DeleteQueueMessagesAsync(_messageIds)).Returns(Task.CompletedTask);
+        _auditService.Setup(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()));
+
+        var sut = new BatchDeleteQueueMessagesCommandHandler(_cosmosDbContext.Object, _serviceBusSettings, _logger.Object, _auditService.Object);
+
+        await sut.Handle(new BatchDeleteQueueMessagesCommand()
+        {
+            Ids = _messageIds
+        });
+
+        _auditService.Verify(x => x.WriteAudit(It.IsAny<MessageQueueDeleteAuditMessage>()), Times.Once);
+    }
 
         
-    }
 }

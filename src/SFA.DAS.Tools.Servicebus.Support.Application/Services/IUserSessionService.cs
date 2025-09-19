@@ -1,12 +1,11 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Services;
+
+public interface IUserSessionService
 {
-    public interface IUserSessionService
-    {
-        Task<UserSession> UpsertUserSession(string queue);
-        Task<UserSession> GetUserSession();
-        Task DeleteUserSession();
-    }
+    Task<UserSession> UpsertUserSession(string queue);
+    Task<UserSession> GetUserSession();
+    Task DeleteUserSession();
 }

@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application
+namespace SFA.DAS.Tools.Servicebus.Support.Application;
+
+public interface ICommandHandler<in TIn, TOut>
 {
-    public interface ICommandHandler<in TIn, TOut>
-    {
-        Task<TOut> Handle(TIn query);
-    }
+    Task<TOut> Handle(TIn query);
 }

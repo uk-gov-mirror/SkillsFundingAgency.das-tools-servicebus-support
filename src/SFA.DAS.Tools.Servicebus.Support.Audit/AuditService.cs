@@ -1,30 +1,21 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
-using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Audit.MessageBuilders;
+using SFA.DAS.Tools.Servicebus.Support.Audit.Types;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Audit
+namespace SFA.DAS.Tools.Servicebus.Support.Audit;
+
+public class AuditService(IAuditApiClient client, IEnumerable<IAuditMessageBuilder> builders)
+    : IAuditService
 {
-    public class AuditService : IAuditService
+    public async Task WriteAudit(AuditMessage message)
     {
-        private readonly IAuditApiClient _client;
-        private readonly IEnumerable<IAuditMessageBuilder> _builders;
-
-        public AuditService(IAuditApiClient client, IEnumerable<IAuditMessageBuilder> builders)
+        foreach (var builder in builders)
         {
-            _client = client;
-            _builders = builders;
+            builder.Build(message);
         }
 
-        public async Task WriteAudit(AuditMessage message)
-        {
-            foreach (var builder in _builders)
-            {
-                builder.Build(message);
-            }
-
-            await _client.Audit(message);
-        }
+        await client.Audit(message);
     }
 }

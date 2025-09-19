@@ -1,12 +1,11 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
+
+public interface IBatchSendMessageStrategy
 {
-    public interface IBatchSendMessageStrategy
-    {
-        Task Execute(IEnumerable<QueueMessage> messages, Func<IEnumerable<QueueMessage>, Task> sendMessages);
-    }
+    Task Execute(IEnumerable<QueueMessage> messages, Func<IEnumerable<QueueMessage>, Task> sendMessages);
 }

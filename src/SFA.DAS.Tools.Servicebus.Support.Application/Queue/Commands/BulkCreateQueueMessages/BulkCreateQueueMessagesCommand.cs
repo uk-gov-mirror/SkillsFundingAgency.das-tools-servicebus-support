@@ -2,10 +2,9 @@
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+
+public class BulkCreateQueueMessagesCommand
 {
-    public class BulkCreateQueueMessagesCommand
-    {
-        public IEnumerable<QueueMessage> Messages { get; set; }
-    }
+    public IEnumerable<QueueMessage> Messages { get; set; }
 }

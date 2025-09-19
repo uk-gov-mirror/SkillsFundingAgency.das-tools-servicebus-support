@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Services
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Services;
+
+public interface IRetrieveMessagesService
 {
-    public interface IRetrieveMessagesService
-    {
-        Task GetMessages(string queueName, long count, int getQuantity);
-    }
+    Task GetMessages(string queueName, long count, int getQuantity);
 }

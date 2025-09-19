@@ -1,12 +1,5 @@
 ﻿using System;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Audit
-{
-    public class InvalidContextException : Exception
-    {
-        public InvalidContextException(string message)
-            : base(message)
-        {
-        }
-    }
-}
+namespace SFA.DAS.Tools.Servicebus.Support.Audit;
+
+public class InvalidContextException(string message) : Exception(message);

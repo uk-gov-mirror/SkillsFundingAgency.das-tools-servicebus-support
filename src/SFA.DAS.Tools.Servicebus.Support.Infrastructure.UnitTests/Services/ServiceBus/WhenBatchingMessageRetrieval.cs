@@ -1,44 +1,43 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Azure.ServiceBus;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.Batching;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.ServiceBus
+namespace SFA.DAS.Tools.Servicebus.Support.Infrastructure.UnitTests.Services.ServiceBus;
+
+public class WhenBatchingMessageRetrieval
 {
-    public class WhenBatchingMessageRetrieval
+    private const string QueueName = "q";
+    private const int Expected = 30;
+    private const int BatchSize = 10;
+    private const int TotalOnQueue = 30;
+    private int _totalRetrieved = 0;
+
+    [Test]
+    public async Task ThenMessagesAreRetrievedInCorrectBatchSizes()
     {
-        private const string QueueName = "q";
-        private const int Expected = 30;
-        private const int BatchSize = 10;
-        private const int TotalOnQueue = 30;
-        private int _totalRetrieved = 0;
+        var strategy = new BatchGetMessageStrategy();
+        var counter = 0;
 
-        [Test]
-        public async Task ThenMessagesAreRetrievedInCorrectBatchSizes()
+        var messages = await strategy.Execute<Message, Message>(QueueName, Expected, BatchSize, async (x) =>
         {
-            var strategy = new BatchGetMessageStrategy();
-            var counter = 0;
+            counter++;
+            var retVal = new List<Message>();
+            var i = 0;
 
-            var messages = await strategy.Execute<Message, Message>(QueueName, Expected, BatchSize, async (x) =>
+            while (i++ < x && _totalRetrieved < TotalOnQueue)
             {
-                counter++;
-                var retVal = new List<Message>();
-                var i = 0;
+                retVal.Add(new Message());
+                _totalRetrieved++;
+            }
 
-                while (i++ < x && _totalRetrieved < TotalOnQueue)
-                {
-                    retVal.Add(new Message());
-                    _totalRetrieved++;
-                }
+            return retVal;
 
-                return retVal;
+        }, async (msg) => msg);
 
-            }, async (msg) => msg);
-
-            messages.Count.Should().Be(Expected);
-            counter.Should().Be(3);
-        }
+        messages.Count.Should().Be(Expected);
+        counter.Should().Be(3);
     }
 }

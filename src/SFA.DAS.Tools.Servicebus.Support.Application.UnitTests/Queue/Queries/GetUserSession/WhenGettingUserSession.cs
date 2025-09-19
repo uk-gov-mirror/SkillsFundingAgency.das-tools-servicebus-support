@@ -1,48 +1,47 @@
-﻿using FluentAssertions;
+﻿using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSession;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetUserSession
+namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetUserSession;
+
+public class WhenGettingUserSession
 {
-    public class WhenGettingUserSession
+    private readonly string _userId = "1";
+    private Mock<ICosmosUserSessionDbContext> _cosmosDbContext;
+
+    [Test]
+    public async Task ThenWillGetUserSessionFromService()
     {
-        private readonly string _userId = "1";
-        private Mock<ICosmosUserSessionDbContext> _cosmosDbContext;
+        _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
 
-        [Test]
-        public async Task ThenWillGetUserSessionFromService()
+        var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
+
+        await sut.Handle(new GetUserSessionQuery()
         {
-            _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
+            UserId = _userId
+        });
 
-            var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
+        _cosmosDbContext.Verify(x => x.GetUserSessionAsync(_userId), Times.Once);
+    }
 
-            await sut.Handle(new GetUserSessionQuery()
-            {
-                UserId = _userId
-            });
+    [Test]
+    public async Task AndTheResponseWillBeValid()
+    {
+        _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
 
-            _cosmosDbContext.Verify(x => x.GetUserSessionAsync(_userId), Times.Once);
-        }
+        var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
 
-        [Test]
-        public async Task AndTheResponseWillBeValid()
+        var response = await sut.Handle(new GetUserSessionQuery()
         {
-            _cosmosDbContext = new Mock<ICosmosUserSessionDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.GetUserSessionAsync(_userId)).ReturnsAsync(new Domain.UserSession());
+            UserId = _userId
+        });
 
-            var sut = new GetUserSessionQueryHandler(_cosmosDbContext.Object);
-
-            var response = await sut.Handle(new GetUserSessionQuery()
-            {
-                UserId = _userId
-            });
-
-            response.Should().NotBeNull();
-            response.UserSession.Should().NotBeNull();
-        }
+        response.Should().NotBeNull();
+        response.UserSession.Should().NotBeNull();
     }
 }

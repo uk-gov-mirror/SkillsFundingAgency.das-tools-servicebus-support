@@ -1,11 +1,10 @@
-﻿namespace SFA.DAS.Tools.Servicebus.Support.Domain.Configuration
+﻿namespace SFA.DAS.Tools.Servicebus.Support.Domain.Configuration;
+
+public class UserIdentitySettings
 {
-    public class UserIdentitySettings
-    {
-        public const string UserIdentitySettingsKey = "UserIdentitySettings";
-        public string NameClaim { get; set; }
-        public string RequiredRole { get; set; }
-        public int UserSessionExpiryHours { get; set; }
-        public int UserRefreshSessionIntervalMinutes { get; set; }
-    }
+    public const string UserIdentitySettingsKey = "UserIdentitySettings";
+    public string NameClaim { get; set; }
+    public string RequiredRole { get; set; }
+    public int UserSessionExpiryHours { get; set; }
+    public int UserRefreshSessionIntervalMinutes { get; set; }
 }

@@ -46,6 +46,21 @@
                     selections = [];
                     console.log("selection cleared");
                 });
+
+            // Page size persistence - restore saved page size when table loads
+            $table.on('load-success.bs.table', function () {
+                var savedPageSize = getSavedPageSize();
+                if (savedPageSize !== '10') { // Only change if different from default
+                    $table.bootstrapTable('refreshOptions', {
+                        pageSize: parseInt(savedPageSize)
+                    });
+                }
+            });
+
+            // Listen for page size changes
+            $table.on('page-size-change.bs.table', function (e, pageSize) {
+                savePageSize(pageSize);
+            });
         });
 
         $("#btnDeleteMessages").click(function () {
@@ -82,6 +97,89 @@
             $('#receiveMessagesQueueNameField').val('@Model.QueueInfo.Name');
             $('#receiveMessagesForm').submit();
         }
+
+        function bulkReplayAllMessages() {
+            if (confirm('Are you sure you want to replay ALL messages? This will process all messages in your session and may take some time for large volumes.')) {
+                displayBusyIndicator();
+                $('#bulkReplayAllQueueNameField').val('@Model.QueueInfo.Name');
+                
+                $.ajax({
+                    url: '@Url.Action("BulkReplayAllMessages", "MessageList")',
+                    type: 'POST',
+                    data: $('#bulkReplayAllForm').serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            showBulkReplayProgress(response.operationId);
+                        } else {
+                            alert('Failed to start bulk replay operation');
+                            hideBusyIndicator();
+                        }
+                    },
+                    error: function() {
+                        alert('Error starting bulk replay operation');
+                        hideBusyIndicator();
+                    }
+                });
+            }
+        }
+
+        function showBulkReplayProgress(operationId) {
+            var progressModal = $('#bulkReplayProgressModal');
+            progressModal.modal('show');
+            
+            var statusInterval = setInterval(function() {
+                $.ajax({
+                    url: '@Url.Action("GetBulkReplayStatus", "MessageList")',
+                    type: 'GET',
+                    success: function(status) {
+                        updateProgressDisplay(status);
+                        
+                        if (status.isComplete) {
+                            clearInterval(statusInterval);
+                            if (status.status === 'Completed') {
+                                $('#progressStatus').html('<span class="text-success">✓ Completed successfully!</span>');
+                                $('#progressDetails').html('Processed ' + status.totalMessagesProcessed + ' messages in ' + status.totalBatchesProcessed + ' batches.');
+                                setTimeout(function() {
+                                    progressModal.modal('hide');
+                                    location.reload();
+                                }, 2000);
+                            } else if (status.status === 'Failed') {
+                                $('#progressStatus').html('<span class="text-danger">✗ Failed</span>');
+                                $('#progressDetails').html('Error: ' + status.errorMessage);
+                            }
+                        }
+                    },
+                    error: function() {
+                        clearInterval(statusInterval);
+                        $('#progressStatus').html('<span class="text-danger">✗ Error checking status</span>');
+                    }
+                });
+            }, 1000);
+        }
+
+        function updateProgressDisplay(status) {
+            $('#progressStatus').text(status.status);
+            if (status.totalMessagesProcessed > 0) {
+                $('#progressDetails').html('Processed ' + status.totalMessagesProcessed + ' messages in ' + status.totalBatchesProcessed + ' batches...');
+            }
+        }
+
+        // Page size persistence functions
+        function savePageSize(pageSize) {
+            sessionStorage.setItem('messageListPageSize', pageSize);
+        }
+
+        function getSavedPageSize() {
+            return sessionStorage.getItem('messageListPageSize') || '10'; // Default to 10 if not set
+        }
+
+        function applySavedPageSize() {
+            var savedPageSize = getSavedPageSize();
+            $('#table').bootstrapTable('refreshOptions', {
+                pageSize: parseInt(savedPageSize)
+            });
+        }
+
 
     </script>
 }
@@ -137,6 +235,12 @@
                 <input type="hidden" name="queueName" id="replayMessagesQueueNameField" />
             </form>
 
+            <a class="govuk-link" id="btnBulkReplayAll" href="#" onclick="bulkReplayAllMessages()" title="Move ALL messages back to the processing queue (handles large volumes without timeout)">Move ALL to processing queue</a> |
+            <form method="post" id="bulkReplayAllForm" asp-action="BulkReplayAllMessages" hidden="hidden">
+                <input type="hidden" name="queueName" id="bulkReplayAllQueueNameField" />
+                <input type="hidden" name="batchSize" id="bulkReplayAllBatchSizeField" value="100" />
+            </form>
+
             <a class="govuk-link" id="btnDeleteMessages" href="#" title="Delete the selected messages permanently">Delete selected</a> |
             <form method="post" id="deleteMessagesForm" asp-action="DeleteMessages" hidden="hidden">
                 <input type="hidden" name="ids" id="deleteMessagesIdsField" />
@@ -161,6 +265,9 @@
            data-sortable="true"
            data-side-pagination="server"
            data-url="@Url.Action("Index", "Messages")"
+           data-page-size="10"
+           data-page-list="[10, 25, 50, 100, 250, 500, 1000]"
+           data-page-size-select="true"
            style="table-layout: fixed"
            data-response-handler="responseHandler">
         <thead class="govuk-table__head">
@@ -244,6 +351,29 @@
                 <div class="modal-footer">
                     <button type="button" class="govuk-button" data-module="govuk-button" id="btnDeleteMessagesModalConfirmation">Confirm</button>
                     <button type="button" class="govuk-button govuk-button--secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="bulkReplayProgressModal" tabindex="-1" role="dialog" aria-labelledby="bulkReplayProgressLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title govuk-heading-m">Bulk Replay Progress</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="govuk-body">
+                        <p>Processing all messages in the background...</p>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p><strong>Status:</strong> <span id="progressStatus">Running</span></p>
+                        <p id="progressDetails">Starting bulk replay operation...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="govuk-button govuk-button--secondary" data-dismiss="modal" id="btnCloseProgress" style="display: none;">Close</button>
                 </div>
             </div>
         </div>

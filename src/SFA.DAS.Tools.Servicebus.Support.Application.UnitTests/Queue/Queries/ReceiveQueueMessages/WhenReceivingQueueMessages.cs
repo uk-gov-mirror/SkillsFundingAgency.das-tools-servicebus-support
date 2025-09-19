@@ -1,53 +1,52 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.ReceiveQueueMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.ReceiveQueueMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.ReceiveQueueMessages;
+
+public class WhenReceivingQueueMessages
 {
-    public class WhenReceivingQueueMessages
+    private readonly string _queueName = "queue";
+    private readonly int _quantity = 42;
+    private Mock<IAsbService> _asbService;
+
+    [Test]
+    public async Task ThenWillPeekQueueMessagesFromService()
     {
-        private readonly string _queueName = "queue";
-        private readonly int _quantity = 42;
-        private Mock<IAsbService> _asbService;
+        _asbService = new Mock<IAsbService>(MockBehavior.Strict);
+        _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
 
-        [Test]
-        public async Task ThenWillPeekQueueMessagesFromService()
+        var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
+
+        await sut.Handle(new ReceiveQueueMessagesQuery()
         {
-            _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
+            QueueName = _queueName,
+            Quantity = _quantity
+        });
 
-            var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
+        _asbService.Verify(x => x.ReceiveMessagesAsync(_queueName, _quantity), Times.Once);
+    }
 
-            await sut.Handle(new ReceiveQueueMessagesQuery()
-            {
-                QueueName = _queueName,
-                Quantity = _quantity
-            });
+    [Test]
+    public async Task AndTheResponseWillBeValid()
+    {
+        _asbService = new Mock<IAsbService>(MockBehavior.Strict);
+        _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
 
-            _asbService.Verify(x => x.ReceiveMessagesAsync(_queueName, _quantity), Times.Once);
-        }
+        var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
 
-        [Test]
-        public async Task AndTheResponseWillBeValid()
+        var response = await sut.Handle(new ReceiveQueueMessagesQuery()
         {
-            _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.ReceiveMessagesAsync(_queueName, _quantity)).ReturnsAsync(new List<QueueMessage>());
+            QueueName = _queueName,
+            Quantity = _quantity
+        });
 
-            var sut = new ReceiveQueueMessagesQueryHandler(_asbService.Object);
-
-            var response = await sut.Handle(new ReceiveQueueMessagesQuery()
-            {
-                QueueName = _queueName,
-                Quantity = _quantity
-            });
-
-            response.Should().NotBeNull();
-            response.Messages.Should().NotBeNull();
-        }
+        response.Should().NotBeNull();
+        response.Messages.Should().NotBeNull();
     }
 }

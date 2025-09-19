@@ -1,25 +1,18 @@
 ﻿using System.Threading.Tasks;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueMessageCount;
+
+public class GetQueueMessageCountQueryHandler(IAsbService asbService)
+    : IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>
 {
-    public class GetQueueMessageCountQueryHandler : IQueryHandler<GetQueueMessageCountQuery, GetQueueMessageCountQueryResponse>
+    public async Task<GetQueueMessageCountQueryResponse> Handle(GetQueueMessageCountQuery query)
     {
-        private readonly IAsbService _asbService;
+        var count = await asbService.GetQueueMessageCountAsync(query.QueueName);
 
-        public GetQueueMessageCountQueryHandler(IAsbService asbService)
+        return new GetQueueMessageCountQueryResponse()
         {
-            _asbService = asbService;
-        }
-
-        public async Task<GetQueueMessageCountQueryResponse> Handle(GetQueueMessageCountQuery query)
-        {
-            var count = await _asbService.GetQueueMessageCountAsync(query.QueueName);
-
-            return new GetQueueMessageCountQueryResponse()
-            {
-                Count = count,
-            };
-        }
+            Count = count,
+        };
     }
 }

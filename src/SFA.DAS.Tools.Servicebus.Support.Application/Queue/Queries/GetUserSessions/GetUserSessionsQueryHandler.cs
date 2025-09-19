@@ -1,25 +1,18 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetUserSessions;
+
+public class GetUserSessionsQueryHandler(ICosmosUserSessionDbContext cosmosDbContext)
+    : IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse>
 {
-    public class GetUserSessionsQueryHandler : IQueryHandler<GetUserSessionsQuery, GetUserSessionsQueryResponse>
+    public async Task<GetUserSessionsQueryResponse> Handle(GetUserSessionsQuery query)
     {
-        private readonly ICosmosUserSessionDbContext _cosmosDbContext;
+        var userSessions = await cosmosDbContext.GetUserSessionsAsync();
 
-        public GetUserSessionsQueryHandler(ICosmosUserSessionDbContext cosmosDbContext)
+        return new GetUserSessionsQueryResponse()
         {
-            _cosmosDbContext = cosmosDbContext;
-        }
-
-        public async Task<GetUserSessionsQueryResponse> Handle(GetUserSessionsQuery query)
-        {
-            var userSessions = await _cosmosDbContext.GetUserSessionsAsync();
-
-            return new GetUserSessionsQueryResponse()
-            {
-                UserSessions = userSessions
-            };
-        }
+            UserSessions = userSessions
+        };
     }
 }

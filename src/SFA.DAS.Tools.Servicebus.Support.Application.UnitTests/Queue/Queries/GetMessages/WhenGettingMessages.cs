@@ -1,49 +1,48 @@
-﻿using FluentAssertions;
+﻿using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetQueueDetails;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetMessages;
+
+public class WhenGettingQueueDetails
 {
-    public class WhenGettingQueueDetails
+    private readonly string _queueName = "queue";
+    private Mock<IAsbService> _asbService;
+
+    [Test]
+    public async Task ThenWillGetQueueDetailsFromService()
     {
-        private readonly string _queueName = "queue";
-        private Mock<IAsbService> _asbService;
+        _asbService = new Mock<IAsbService>(MockBehavior.Strict);
+        _asbService.Setup(x => x.GetQueueDetailsAsync(_queueName)).ReturnsAsync(new QueueInfo());
 
-        [Test]
-        public async Task ThenWillGetQueueDetailsFromService()
+        var sut = new GetQueueDetailsQueryHandler(_asbService.Object);
+
+        await sut.Handle(new GetQueueDetailsQuery()
         {
-            _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.GetQueueDetailsAsync(_queueName)).ReturnsAsync(new QueueInfo());
+            QueueName = _queueName
+        });
 
-            var sut = new GetQueueDetailsQueryHandler(_asbService.Object);
+        _asbService.Verify(x => x.GetQueueDetailsAsync(_queueName), Times.Once);
+    }
 
-            await sut.Handle(new GetQueueDetailsQuery()
-            {
-                QueueName = _queueName
-            });
+    [Test]
+    public async Task AndTheResponseWillBeValid()
+    {
+        _asbService = new Mock<IAsbService>(MockBehavior.Strict);
+        _asbService.Setup(x => x.GetQueueDetailsAsync(_queueName)).ReturnsAsync(new QueueInfo());
 
-            _asbService.Verify(x => x.GetQueueDetailsAsync(_queueName), Times.Once);
-        }
+        var sut = new GetQueueDetailsQueryHandler(_asbService.Object);
 
-        [Test]
-        public async Task AndTheResponseWillBeValid()
+        var response = await sut.Handle(new GetQueueDetailsQuery()
         {
-            _asbService = new Mock<IAsbService>(MockBehavior.Strict);
-            _asbService.Setup(x => x.GetQueueDetailsAsync(_queueName)).ReturnsAsync(new QueueInfo());
+            QueueName = _queueName
+        });
 
-            var sut = new GetQueueDetailsQueryHandler(_asbService.Object);
-
-            var response = await sut.Handle(new GetQueueDetailsQuery()
-            {
-                QueueName = _queueName
-            });
-
-            response.Should().NotBeNull();
-            response.QueueInfo.Should().NotBeNull();
-        }
+        response.Should().NotBeNull();
+        response.QueueInfo.Should().NotBeNull();
     }
 }

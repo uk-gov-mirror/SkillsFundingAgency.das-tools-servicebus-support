@@ -1,57 +1,56 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.GetMessages;
 using SFA.DAS.Tools.Servicebus.Support.Domain.Queue;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services;
 using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetQueueDetails
+namespace SFA.DAS.Tools.Servicebus.Support.Application.UnitTests.Queue.Queries.GetQueueDetails;
+
+public class WhenGettingMessages
 {
-    public class WhenGettingMessages
+    private readonly string _userId = "1";
+    private Mock<ICosmosMessageDbContext> _cosmosDbContext;
+    private readonly SearchProperties _searchProperties = new SearchProperties();
+
+    [Test]
+    public async Task ThenWillGetQueueDetailsFromService()
     {
-        private readonly string _userId = "1";
-        private Mock<ICosmosMessageDbContext> _cosmosDbContext;
-        private readonly SearchProperties _searchProperties = new SearchProperties();
+        _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
+        _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
-        [Test]
-        public async Task ThenWillGetQueueDetailsFromService()
+        var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
+
+        await sut.Handle(new GetMessagesQuery()
         {
-            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
-            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
+            UserId = _userId,
+            SearchProperties = _searchProperties
+        });
 
-            var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
+        _cosmosDbContext.Verify(x => x.GetQueueMessagesAsync(_userId, _searchProperties), Times.Once);
+        _cosmosDbContext.Verify(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>()), Times.Exactly(2));
+    }
 
-            await sut.Handle(new GetMessagesQuery()
-            {
-                UserId = _userId,
-                SearchProperties = _searchProperties
-            });
+    [Test]
+    public async Task AndTheResponseWillBeValid()
+    {
+        _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
+        _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
+        _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
 
-            _cosmosDbContext.Verify(x => x.GetQueueMessagesAsync(_userId, _searchProperties), Times.Once);
-            _cosmosDbContext.Verify(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>()), Times.Exactly(2));
-        }
+        var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
 
-        [Test]
-        public async Task AndTheResponseWillBeValid()
+        var response = await sut.Handle(new GetMessagesQuery()
         {
-            _cosmosDbContext = new Mock<ICosmosMessageDbContext>(MockBehavior.Strict);
-            _cosmosDbContext.Setup(x => x.GetQueueMessagesAsync(_userId, _searchProperties)).ReturnsAsync(new List<QueueMessage>());
-            _cosmosDbContext.Setup(x => x.GetMessageCountAsync(_userId, It.IsAny<SearchProperties>())).ReturnsAsync(1);
+            UserId = _userId,
+            SearchProperties = _searchProperties
+        });
 
-            var sut = new GetMessagesQueryHandler(_cosmosDbContext.Object);
-
-            var response = await sut.Handle(new GetMessagesQuery()
-            {
-                UserId = _userId,
-                SearchProperties = _searchProperties
-            });
-
-            response.Should().NotBeNull();
-            response.Messages.Should().NotBeNull();
-        }
+        response.Should().NotBeNull();
+        response.Messages.Should().NotBeNull();
     }
 }

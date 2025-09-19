@@ -1,25 +1,18 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.ServiceBus;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Queries.PeekQueueMessages;
+
+public class PeekQueueMessagesQueryHandler(IAsbService asbService)
+    : IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse>
 {
-    public class PeekQueueMessagesQueryHandler : IQueryHandler<PeekQueueMessagesQuery, PeekQueueMessagesQueryResponse>
+    public async Task<PeekQueueMessagesQueryResponse> Handle(PeekQueueMessagesQuery query)
     {
-        private readonly IAsbService _asbService;
+        var messages = await asbService.PeekMessagesAsync(query.QueueName, query.Quantity);
 
-        public PeekQueueMessagesQueryHandler(IAsbService asbService)
+        return new PeekQueueMessagesQueryResponse()
         {
-            _asbService = asbService;
-        }
-
-        public async Task<PeekQueueMessagesQueryResponse> Handle(PeekQueueMessagesQuery query)
-        {
-            var messages = await _asbService.PeekMessagesAsync(query.QueueName, query.Quantity);
-
-            return new PeekQueueMessagesQueryResponse()
-            {
-                Messages = messages
-            };
-        }
+            Messages = messages
+        };
     }
 }

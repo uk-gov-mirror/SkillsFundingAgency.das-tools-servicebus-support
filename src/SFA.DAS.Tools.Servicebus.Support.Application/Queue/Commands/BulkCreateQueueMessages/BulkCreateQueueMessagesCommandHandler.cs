@@ -1,22 +1,15 @@
-﻿using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using SFA.DAS.Tools.Servicebus.Support.Infrastructure.Services.CosmosDb;
 
-namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages
+namespace SFA.DAS.Tools.Servicebus.Support.Application.Queue.Commands.BulkCreateQueueMessages;
+
+public class BulkCreateQueueMessagesCommandHandler(ICosmosMessageDbContext cosmosDbContext)
+    : ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>
 {
-    public class BulkCreateQueueMessagesCommandHandler : ICommandHandler<BulkCreateQueueMessagesCommand, BulkCreateQueueMessagesCommandResponse>
+    public async Task<BulkCreateQueueMessagesCommandResponse> Handle(BulkCreateQueueMessagesCommand query)
     {
-        private readonly ICosmosMessageDbContext _cosmosDbContext;
+        await cosmosDbContext.BulkCreateQueueMessagesAsync(query.Messages);
 
-        public BulkCreateQueueMessagesCommandHandler(ICosmosMessageDbContext cosmosDbContext)
-        {
-            _cosmosDbContext = cosmosDbContext;
-        }
-
-        public async Task<BulkCreateQueueMessagesCommandResponse> Handle(BulkCreateQueueMessagesCommand query)
-        {
-            await _cosmosDbContext.BulkCreateQueueMessagesAsync(query.Messages);
-
-            return new BulkCreateQueueMessagesCommandResponse();
-        }
+        return new BulkCreateQueueMessagesCommandResponse();
     }
 }
